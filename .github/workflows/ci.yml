@@ -1,0 +1,39 @@
+name: Quality
+on: [push, pull_request]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          {
+            POSTGRES_USER: modusaas,
+            POSTGRES_PASSWORD: modusaas,
+            POSTGRES_DB: modusaas,
+          }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U modusaas" --health-interval 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://modusaas:modusaas@localhost:5432/modusaas
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: ci-only-random-like-secret-not-for-production-2026
+      NEXT_PUBLIC_PRESET: standard
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .node-version, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm setup
+      - run: pnpm lint && pnpm typecheck && pnpm test && pnpm format:check
+      - run: pnpm build && pnpm size
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm dev > /tmp/modusaas.log 2>&1 &
+      - run: node scripts/wait-for-health.mjs
+      - run: pnpm test:integration
+      - run: EXTERNAL_SERVER=1 pnpm test:e2e
+      - run: pnpm test:generator
+      - run: docker build -t modusaas:ci .
+      - run: pnpm audit --prod --audit-level high

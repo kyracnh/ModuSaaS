@@ -1,0 +1,11 @@
+name: Feature request
+description: Propose a reusable capability
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      {
+        label: Problem and proposed behavior,
+        description: Explain a concrete use case and its maintenance/security implications.,
+      }
+    validations: { required: true }

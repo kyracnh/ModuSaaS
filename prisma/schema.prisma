@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id String @id
+  name String
+  email String @unique
+  emailVerified Boolean @default(false)
+  image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions Session[]
+  accounts Account[]
+  members Member[]
+  invitations Invitation[]
+  projects Project[]
+  notifications Notification[]
+  files StoredFile[]
+  conversations Conversation[]
+  usage AiUsage[]
+  subscription Subscription?
+  preference Preference?
+  @@map("user")
+}
+model Session {
+  id String @id
+  expiresAt DateTime
+  token String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+  @@index([userId])
+  @@map("session")
+}
+model Account {
+  id String @id
+  accountId String
+  providerId String
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken String?
+  refreshToken String?
+  idToken String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope String?
+  password String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId])
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+model Verification {
+  id String @id
+  identifier String
+  value String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([identifier])
+  @@map("verification")
+}
+model RateLimit {
+  id String @id @default(cuid())
+  key String @unique
+  count Int
+  lastRequest BigInt
+  @@map("rateLimit")
+}
+model Organization {
+  id String @id
+  name String
+  slug String @unique
+  logo String?
+  createdAt DateTime @default(now())
+  metadata String?
+  members Member[]
+  invitations Invitation[]
+  projects Project[]
+  @@map("organization")
+}
+model Member {
+  id String @id
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role String @default("member")
+  createdAt DateTime @default(now())
+  @@unique([organizationId,userId])
+  @@index([userId])
+  @@map("member")
+}
+model Invitation {
+  id String @id
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email String
+  role String?
+  status String @default("pending")
+  expiresAt DateTime
+  inviterId String
+  inviter User @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([organizationId,email])
+  @@map("invitation")
+}
+model Project {
+  id String @id @default(cuid())
+  name String
+  description String @default("")
+  status String @default("active")
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId,organizationId,createdAt])
+  @@index([organizationId,createdAt])
+}
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title String
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId,createdAt])
+}
+model StoredFile {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name String
+  mime String
+  size Int
+  key String @unique
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+model Subscription {
+  id String @id @default(cuid())
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId String @unique
+  providerSubscriptionId String? @unique
+  status String @default("inactive")
+  plan String @default("free")
+  cancelAtPeriodEnd Boolean @default(false)
+  currentPeriodEnd DateTime?
+  updatedAt DateTime @updatedAt
+}
+model WebhookEvent {
+  id String @id
+  processedAt DateTime @default(now())
+}
+model Conversation {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title String
+  createdAt DateTime @default(now())
+  messages Message[]
+  @@index([userId,createdAt])
+}
+model Message {
+  id String @id @default(cuid())
+  conversationId String
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role String
+  content String
+  createdAt DateTime @default(now())
+  @@index([conversationId,createdAt])
+}
+model AiUsage {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model String
+  inputTokens Int @default(0)
+  outputTokens Int @default(0)
+  status String @default("reserved")
+  estimatedCost Float @default(0)
+  createdAt DateTime @default(now())
+  @@index([userId,createdAt])
+}
+model RequestLimit {
+  key String @id
+  count Int
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+
+model Preference {
+ userId String @id
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ emailUpdates Boolean @default(false)
+ productAnnouncements Boolean @default(false)
+}

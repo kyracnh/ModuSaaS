@@ -1,0 +1,46 @@
+name: modusaas-prod
+x-app-env: &app-env
+  DATABASE_URL: postgresql://modusaas:${POSTGRES_PASSWORD:?Set a URL-safe random database password}@db:5432/modusaas
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set a random 32+ character auth secret}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set the public HTTPS application URL}
+  NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?Set the public HTTPS application URL}
+  NEXT_PUBLIC_PRESET: ${NEXT_PUBLIC_PRESET:-standard}
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: modusaas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a URL-safe random database password}
+      POSTGRES_DB: modusaas
+    volumes: ["postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U modusaas -d modusaas"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: { context: ., target: tooling }
+    environment: *app-env
+    command: ["pnpm", "db:migrate"]
+    depends_on:
+      db: { condition: service_healthy }
+  app:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-ModuSaaS}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_PRESET: ${NEXT_PUBLIC_PRESET:-standard}
+    restart: unless-stopped
+    init: true
+    environment: *app-env
+    ports: ["127.0.0.1:3000:3000"]
+    volumes: ["uploads:/app/.data/uploads"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      db: { condition: service_healthy }
+volumes:
+  postgres:
+  uploads:

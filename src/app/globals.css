@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+:root {
+  --background: #fafaf9;
+  --foreground: #171917;
+  --card: #fff;
+  --muted: #f0f1ee;
+  --muted-foreground: #687066;
+  --border: #e3e6df;
+  --primary: #263e2c;
+  --primary-foreground: #fff;
+  --ring: #648b68;
+  --radius: 0.75rem;
+}
+.dark {
+  --background: #111411;
+  --foreground: #edf1eb;
+  --card: #191e19;
+  --muted: #232b23;
+  --muted-foreground: #a5afa2;
+  --border: #323d30;
+  --primary: #c4dfb8;
+  --primary-foreground: #182117;
+  --ring: #94ba82;
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --font-sans: var(--app-font, system-ui, sans-serif);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--app-font, system-ui, sans-serif);
+}
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+summary {
+  cursor: pointer;
+}
+a,
+button,
+input,
+select,
+textarea {
+  outline-offset: 4px;
+}
+::selection {
+  background: #bbd9ad;
+  color: #172310;
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.035em;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+.prose p {
+  line-height: 1.8;
+}
+.prose h2 {
+  font-size: 1.4rem;
+  margin-top: 2rem;
+  margin-bottom: 0.6rem;
+}
+select {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+}
